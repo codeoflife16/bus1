@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BUS.COM - Robotic Bus App</title>
+
+  <!-- Font Awesome -->
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+  <!-- Leaflet Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(270deg, #0f2027, #203a43, #2c5364);
+      background-size: 600% 600%;
+      animation: gradientBG 15s ease infinite;
+      color: #fff;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #00ffe0;
+      text-shadow: 0 0 10px #00ffe0, 0 0 20px #00ffe0;
+      animation: pulseText 2s infinite alternate;
+    }
+
+    @keyframes pulseText {
+      from { text-shadow: 0 0 10px #00ffe0; }
+      to { text-shadow: 0 0 20px #00ffe0, 0 0 30px #00ffe0; }
+    }
+
+    .container, .main-app {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    .container.active {
+      display: flex;
+    }
+
+    .main-app.active {
+      display: block;
+      padding-top: 80px;
+    }
+
+    .form-box {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      padding: 40px 25px;
+      border-radius: 15px;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.3);
+      width: 90%;
+      max-width: 450px;
+    }
+
+    .logo i {
+      color: #00ffe0;
+      animation: bounce 1s infinite alternate;
+    }
+
+    .logo h1 {
+      margin-top: 10px;
+      color: #00ffe0;
+    }
+
+    @keyframes bounce {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-5px); }
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .buttons button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      border: none;
+      background: #00ffe0;
+      color: #000;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .buttons button:hover {
+      background: #00bba5;
+      color: #fff;
+    }
+
+    .buttons img {
+      width: 24px;
+      height: 24px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      margin-bottom: 16px;
+      border-radius: 5px;
+      border: 1px solid #00ffe0;
+      background: rgba(0,0,0,0.2);
+      color: white;
+    }
+
+    form button {
+      width: 100%;
+      background-color: #28a745;
+    }
+
+    form button:hover {
+      background-color: #1cb46e;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      background: #0f2027;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      z-index: 1000;
+      box-shadow: 0 0 10px #00ffe0;
+    }
+
+    nav a {
+      color: #00ffe0;
+      text-decoration: none;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    nav a.active {
+      border-bottom: 2px solid #ffe600;
+    }
+
+    section {
+      padding: 80px 20px;
+      min-height: 100vh;
+      background: rgba(0,0,0,0.3);
+      margin-bottom: 10px;
+      animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #map {
+      width: 100%;
+      height: 300px;
+      border-radius: 10px;
+      margin-top: 20px;
+      box-shadow: 0 0 10px #00ffe0;
+    }
+
+    .success-msg {
+      color: #00ff88;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 480px) {
+      .buttons button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Auth Container -->
+<div class="container active" id="authContainer">
+  <div class="form-box">
+    <div class="logo">
+      <i class="fas fa-robot fa-3x"></i>
+      <h1>BUS.COM</h1>
+    </div>
+    <div class="buttons">
+      <button id="loginBtn">
+        <img src="https://cdn-icons-png.flaticon.com/512/61/61212.png" alt="Bus Icon" />
+        LOG IN
+      </button>
+      <button id="signupBtn">
+        <img src="https://cdn-icons-png.flaticon.com/512/61/61212.png" alt="Bus Icon" />
+        SIGN UP
+      </button>
+    </div>
+    <div id="formArea"></div>
+    <div id="message" class="success-msg"></div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div class="main-app" id="mainApp">
+  <nav>
+    <a href="home.html#home">Home</a>
+    <a href="about.html#about">About</a>
+    <a href="tripsetup.html">Track Your Bus</a>
+    <a href="book.html#book">Book Your Bus</a>
+    <a href="corporatebus.html">Book College/ Corporate Buses</a> 
+    <a href="faq.html#faq">FAQ</a>
+    <a href="travel-agencies.html#agencies">Travel Agencies</a>
+   
+
+  </nav>
+
+  <section id="home">
+    <h2>Welcome to BUS.COM 🤖</h2>
+    <p>Track and book your bus with intelligent automation.</p>
+  </section>
+
+  <section id="about">
+    <h2>About</h2>
+    <p>BUS.COM is your smart AI-driven platform for real-time bus tracking, group booking, and robotic assistance for travel planning across India.</p>
+  </section>
+
+  <section id="track">
+    <h2>Track Your Bus</h2>
+    <p>Live location of your nearest bus:</p>
+    <div id="map"></div>
+  </section>
+
+  <section id="book">
+    <h2>Book Your Bus</h2>
+    <p>Plan your journey and reserve your seat with futuristic ease.</p>
+  </section>
+</div>
+
+<script>
+  const formArea = document.getElementById("formArea");
+  const message = document.getElementById("message");
+  const authContainer = document.getElementById("authContainer");
+  const mainApp = document.getElementById("mainApp");
+
+  const states = [..."Andhra Pradesh,Arunachal Pradesh,Assam,Bihar,Chhattisgarh,Goa,Gujarat,Haryana,Himachal Pradesh,Jharkhand,Karnataka,Kerala,Madhya Pradesh,Maharashtra,Manipur,Meghalaya,Mizoram,Nagaland,Odisha,Punjab,Rajasthan,Sikkim,Tamil Nadu,Telangana,Tripura,Uttar Pradesh,Uttarakhand,West Bengal".split(",")];
+
+  document.getElementById("loginBtn").addEventListener("click", () => {
+    message.innerHTML = "";
+    formArea.innerHTML = `
+      <h2>Log In</h2>
+      <form id="loginForm">
+        <label>Email:</label>
+        <input type="email" id="loginEmail" required />
+        <label>Password:</label>
+        <input type="password" id="loginPassword" required />
+        <button type="submit">Log In</button>
+      </form>
+    `;
+    addLoginHandler();
+  });
+
+  document.getElementById("signupBtn").addEventListener("click", () => {
+    message.innerHTML = "";
+    let stateOptions = states.map(state => `<option value="${state}">${state}</option>`).join("");
+    formArea.innerHTML = `
+      <h2>Sign Up</h2>
+      <form id="signupForm">
+        <label>Username:</label>
+        <input type="text" id="signupUsername" required />
+        <label>City:</label>
+        <input type="text" id="signupCity" required />
+        <label>State:</label>
+        <select id="signupState" required>
+          <option value="">--Select State--</option>
+          ${stateOptions}
+        </select>
+        <label>Pin Code:</label>
+        <input type="text" id="signupPincode" pattern="\\d{6}" required />
+        <label>Email:</label>
+        <input type="email" id="signupEmail" required />
+        <label>Password:</label>
+        <input type="password" id="signupPassword" required />
+        <button type="submit">Sign Up</button>
+      </form>
+    `;
+    addSignupHandler();
+  });
+
+  function addSignupHandler() {
+    document.getElementById("signupForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const user = {
+        username: document.getElementById("signupUsername").value,
+        city: document.getElementById("signupCity").value,
+        state: document.getElementById("signupState").value,
+        pincode: document.getElementById("signupPincode").value,
+        email: document.getElementById("signupEmail").value,
+        password: document.getElementById("signupPassword").value
+      };
+      localStorage.setItem("user", JSON.stringify(user));
+      message.textContent = "✅ Sign up successful! You can now log in.";
+      formArea.innerHTML = "";
+    });
+  }
+
+  function addLoginHandler() {
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+
+      if (storedUser && storedUser.email === email && storedUser.password === password) {
+        showMainApp(storedUser.username);
+      } else {
+        message.textContent = "❌ Incorrect email or password.";
+      }
+    });
+  }
+
+  function showMainApp(username) {
+    authContainer.classList.remove("active");
+    mainApp.classList.add("active");
+    window.location.hash = "#home";
+  }
+
+  const navLinks = document.querySelectorAll("nav a");
+  window.addEventListener("scroll", () => {
+    let fromTop = window.scrollY + 100;
+    navLinks.forEach(link => {
+      const section = document.querySelector(link.hash);
+      if (section && section.offsetTop <= fromTop && section.offsetTop + section.offsetHeight > fromTop) {
+        link.classList.add("active");
+      } else {
+        link.classList.remove("active");
+      }
+    });
+  });
+
+  function initMap() {
+    const map = L.map('map').setView([22.5726, 88.3639], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    const busIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/61/61212.png',
+      iconSize: [40, 40],
+      iconAnchor: [20, 20]
+    });
+
+    const marker = L.marker([22.5726, 88.3639], { icon: busIcon }).addTo(map);
+    let lat = 22.5726, lng = 88.3639;
+
+    setInterval(() => {
+      lat += 0.0005;
+      lng += 0.0003;
+      marker.setLatLng([lat, lng]);
+      map.setView([lat, lng]);
+    }, 2000);
+  }
+
+  window.addEventListener("load", initMap);
+</script>
+</body>
+</html>
