@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Available Buses - BUS.COM</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f4f8;
+    }
+    h1 {
+      text-align: center;
+      color: #0077cc;
+    }
+    .bus-list {
+      max-width: 800px;
+      margin: 20px auto;
+    }
+    .bus-card {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+    }
+    .bus-card h3 {
+      margin: 0 0 10px 0;
+      color: #005fa3;
+    }
+    .bus-card p {
+      margin: 5px 0;
+    }
+    .tag-ac {
+      background: #0077cc;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 5px;
+      font-size: 12px;
+      margin-left: 10px;
+    }
+    ul.stops {
+      padding-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Available Buses</h1>
+  <div class="bus-list" id="busList"></div>
+
+  <script>
+    const stops = [
+      "Howrah Station", "Sealdah Station", "Esplanade", "Park Street", "College Street", "Shyambazar",
+      "Gariahat", "Dumdum", "Ultadanga", "Behala", "Salt Lake Sector V", "New Town", "Jadavpur",
+      "Tollygunge", "Kolkata Airport", "Baguiati", "Kestopur", "Lake Town", "BBD Bagh", "Kasba",
+      "Chingrighata", "Rabindra Sadan", "Sonarpur", "Naktala", "Barasat", "Baruipur", "Joka"
+    ];
+
+    const busCatalog = [
+      { name: "AC1", type: "Government", ac: true },
+      { name: "S9A", type: "Private", ac: false },
+      { name: "205", type: "Government", ac: false },
+      { name: "VS1", type: "Government", ac: true },
+      { name: "AC37", type: "Government", ac: true },
+      { name: "S12D", type: "Private", ac: false },
+      { name: "30C", type: "Private", ac: false },
+      { name: "12C/1B", type: "Private", ac: false },
+      { name: "AC20", type: "Government", ac: true },
+      { name: "E1", type: "Private", ac: false },
+      { name: "44", type: "Private", ac: false },
+      { name: "13A", type: "Private", ac: false },
+      { name: "AC4B", type: "Government", ac: true },
+      { name: "M16A", type: "Private", ac: false },
+      { name: "AC12D", type: "Government", ac: true },
+      { name: "S5", type: "Private", ac: false },
+      { name: "235", type: "Government", ac: false }
+    ];
+
+    const routes = [];
+    stops.forEach(fromStop => {
+      stops.forEach(toStop => {
+        if (fromStop !== toStop) {
+          const buses = [];
+          for (let i = 0; i < 3; i++) {
+            const randomBus = busCatalog[Math.floor(Math.random() * busCatalog.length)];
+            const eta = Math.floor(Math.random() * 15) + 5;
+            const now = new Date();
+            const startMinutes = now.getHours() * 60 + now.getMinutes();
+            const stopCount = Math.floor(Math.random() * 4) + 2;
+            const stopIndices = [fromStop];
+            while (stopIndices.length < stopCount - 1) {
+              const randStop = stops[Math.floor(Math.random() * stops.length)];
+              if (!stopIndices.includes(randStop) && randStop !== toStop) stopIndices.push(randStop);
+            }
+            stopIndices.push(toStop);
+            const arrivalSchedule = stopIndices.map((stop, idx) => {
+              const totalMinutes = startMinutes + idx * 10;
+              const hours = Math.floor(totalMinutes / 60) % 24;
+              const minutes = totalMinutes % 60;
+              const ampm = hours >= 12 ? 'PM' : 'AM';
+              const hour12 = hours % 12 || 12;
+              return `${stop} - ${hour12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+            });
+
+            const distanceStops = Math.abs(stops.indexOf(fromStop) - stops.indexOf(toStop));
+            const fare = 10 + Math.ceil(distanceStops / 5) * 5;
+
+            const map = `https://www.google.com/maps/dir/${encodeURIComponent(fromStop)}/${encodeURIComponent(toStop)}`;
+            buses.push({ ...randomBus, eta, fare, map, arrivalSchedule });
+          }
+          routes.push({ from: fromStop, to: toStop, buses });
+        }
+      });
+    });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const pickup = urlParams.get("pickup");
+    const destination = urlParams.get("destination");
+
+    const busListDiv = document.getElementById("busList");
+    const routeMatch = routes.find(route => route.from === pickup && route.to === destination);
+
+    if (routeMatch) {
+      routeMatch.buses.sort((a, b) => a.fare - b.fare);
+
+      routeMatch.buses.forEach(bus => {
+        const card = document.createElement("div");
+        card.className = "bus-card";
+        const stopsHTML = `<ul class="stops">` + bus.arrivalSchedule.map(s => `<li>${s}</li>`).join('') + `</ul>`;
+        card.innerHTML = `
+          <h3>Bus ${bus.name}${bus.ac ? '<span class="tag-ac">AC</span>' : ''}</h3>
+          <p><strong>From:</strong> ${routeMatch.from}</p>
+          <p><strong>To:</strong> ${routeMatch.to}</p>
+          <p><strong>Status:</strong> Available</p>
+          <p><strong>Type:</strong> ${bus.type}</p>
+          <p><strong>Fare:</strong> ₹${bus.fare}</p>
+          <p><strong>ETA:</strong> ${bus.eta} mins</p>
+          <p><a href="${bus.map}" target="_blank">🗺️ View Route Map</a></p>
+          <p><strong>Estimated Arrival at Stops:</strong></p>
+          ${stopsHTML}
+        `;
+        busListDiv.appendChild(card);
+      });
+    } else {
+      busListDiv.innerHTML = `<p style="text-align: center; font-size: 18px;">No buses available for this route.</p>`;
+      
+    }
+  </script>
+</body>
+</html>
