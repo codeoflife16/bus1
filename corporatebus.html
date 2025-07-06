@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bus.com - Institutional & Corporate Booking</title>
+
+  <!-- jsPDF CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #eef7fc;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #002244;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      background: #ccc;
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      border-radius: 6px 6px 0 0;
+      margin: 0 5px;
+      transition: background 0.3s;
+    }
+
+    .tab-btn.active {
+      background: #002244;
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    h2 {
+      text-align: center;
+      color: #002244;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin: 10px 0 5px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #002244;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #004080;
+    }
+
+    .result {
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+      color: #006400;
+      margin-bottom: 15px;
+    }
+
+    footer {
+      background: #f0f0f0;
+      padding: 15px;
+      text-align: center;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Bus.com - Bus Booking Portal</h1>
+    <p>For Institutions & Corporates</p>
+  </header>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('school')">Schools & Colleges</button>
+      <button class="tab-btn" onclick="switchTab('corporate')">Corporate Offices</button>
+    </div>
+
+    <!-- SCHOOL & COLLEGE SECTION -->
+    <div class="tab-content active" id="school">
+      <h2>Institutional Booking Form</h2>
+      <form id="schoolForm">
+        <label for="institution">Institution Name</label>
+        <input type="text" id="institution" required>
+
+        <label for="email">Email</label>
+        <input type="email" id="email" required>
+
+        <label for="phone">Contact Number</label>
+        <input type="tel" id="phone" pattern="[0-9]{10}" required>
+
+        <label for="address">Address</label>
+        <textarea id="address" rows="3" required></textarea>
+
+        <label for="bookingType">Booking Type</label>
+        <select id="bookingType">
+          <option value="monthly">Monthly</option>
+          <option value="annual">Annual</option>
+        </select>
+
+        <label for="numBuses">Number of Buses</label>
+        <input type="number" id="numBuses" min="1" required>
+
+        <div class="result" id="schoolFee">Total Fee: ₹0</div>
+
+        <button type="submit">Submit & Generate PDF</button>
+      </form>
+    </div>
+
+    <!-- CORPORATE SECTION -->
+    <div class="tab-content" id="corporate">
+      <h2>Corporate Office Bus Booking</h2>
+      <form id="corporateForm">
+        <label for="company">Company Name</label>
+        <input type="text" id="company" required>
+
+        <label for="emailCorp">Email</label>
+        <input type="email" id="emailCorp" required>
+
+        <label for="phoneCorp">Contact Number</label>
+        <input type="tel" id="phoneCorp" pattern="[0-9]{10}" required>
+
+        <label for="addressCorp">Office Address</label>
+        <textarea id="addressCorp" rows="3" required></textarea>
+
+        <label for="bookingTypeCorp">Booking Type</label>
+        <select id="bookingTypeCorp">
+          <option value="monthly">Monthly</option>
+          <option value="annual">Annual</option>
+        </select>
+
+        <label for="numBusesCorp">Number of Buses</label>
+        <input type="number" id="numBusesCorp" min="1" required>
+
+        <div class="result" id="corpFee">Total Fee: ₹0</div>
+
+        <button type="submit">Submit & Generate PDF</button>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 BUS.COM | Reliable Travel Solutions for All
+  </footer>
+
+  <script>
+    const pricing = { monthly: 5000, annual: 50000 };
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
+      document.getElementById(tab).classList.add('active');
+    }
+
+    // SCHOOL CALCULATION
+    const bookingTypeEl = document.getElementById("bookingType");
+    const numBusesEl = document.getElementById("numBuses");
+    const schoolFeeEl = document.getElementById("schoolFee");
+
+    bookingTypeEl.addEventListener("change", calcSchoolFee);
+    numBusesEl.addEventListener("input", calcSchoolFee);
+
+    function calcSchoolFee() {
+      const count = parseInt(numBusesEl.value) || 0;
+      const fee = count * pricing[bookingTypeEl.value];
+      schoolFeeEl.textContent = `Total Fee: ₹${fee.toLocaleString()}`;
+    }
+
+    // CORPORATE CALCULATION
+    const bookingTypeCorpEl = document.getElementById("bookingTypeCorp");
+    const numBusesCorpEl = document.getElementById("numBusesCorp");
+    const corpFeeEl = document.getElementById("corpFee");
+
+    bookingTypeCorpEl.addEventListener("change", calcCorpFee);
+    numBusesCorpEl.addEventListener("input", calcCorpFee);
+
+    function calcCorpFee() {
+      const count = parseInt(numBusesCorpEl.value) || 0;
+      const fee = count * pricing[bookingTypeCorpEl.value];
+      corpFeeEl.textContent = `Total Fee: ₹${fee.toLocaleString()}`;
+    }
+
+    // Generate PDF for school form
+    document.getElementById("schoolForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const bookingId = "SCH" + Date.now();
+      const institution = document.getElementById("institution").value;
+      const email = document.getElementById("email").value;
+      const phone = document.getElementById("phone").value;
+      const address = document.getElementById("address").value;
+      const type = bookingTypeEl.value;
+      const buses = numBusesEl.value;
+      const fee = buses * pricing[type];
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text("BUS.COM - School/College Booking Confirmation", 20, 20);
+      doc.setFontSize(12);
+      doc.text(`Booking ID: ${bookingId}`, 20, 35);
+      doc.text(`Institution: ${institution}`, 20, 45);
+      doc.text(`Email: ${email}`, 20, 55);
+      doc.text(`Phone: ${phone}`, 20, 65);
+      doc.text(`Address: ${address}`, 20, 75);
+      doc.text(`Booking Type: ${type}`, 20, 85);
+      doc.text(`Buses: ${buses}`, 20, 95);
+      doc.text(`Total Fee: ₹${fee.toLocaleString()}`, 20, 105);
+      doc.text("Thank you for choosing BUS.COM!", 20, 125);
+      doc.save(`SchoolBooking_${bookingId}.pdf`);
+      alert("School booking submitted!");
+      this.reset();
+      schoolFeeEl.textContent = "Total Fee: ₹0";
+    });
+
+    // Generate PDF for corporate form
+    document.getElementById("corporateForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const bookingId = "CORP" + Date.now();
+      const company = document.getElementById("company").value;
+      const email = document.getElementById("emailCorp").value;
+      const phone = document.getElementById("phoneCorp").value;
+      const address = document.getElementById("addressCorp").value;
+      const type = bookingTypeCorpEl.value;
+      const buses = numBusesCorpEl.value;
+      const fee = buses * pricing[type];
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text("BUS.COM - Corporate Booking Confirmation", 20, 20);
+      doc.setFontSize(12);
+      doc.text(`Booking ID: ${bookingId}`, 20, 35);
+      doc.text(`Company: ${company}`, 20, 45);
+      doc.text(`Email: ${email}`, 20, 55);
+      doc.text(`Phone: ${phone}`, 20, 65);
+      doc.text(`Address: ${address}`, 20, 75);
+      doc.text(`Booking Type: ${type}`, 20, 85);
+      doc.text(`Buses: ${buses}`, 20, 95);
+      doc.text(`Total Fee: ₹${fee.toLocaleString()}`, 20, 105);
+      doc.text("Thank you for choosing BUS.COM!", 20, 125);
+      doc.save(`CorporateBooking_${bookingId}.pdf`);
+      alert("Corporate booking submitted!");
+      this.reset();
+      corpFeeEl.textContent = "Total Fee: ₹0";
+    });
+    // Add before or after PDF generation
+emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
+  institution: institution,
+  email: email,
+  booking_type: type,
+  buses: buses,
+  total_fee: `₹${fee.toLocaleString()}`
+}).then(() => {
+  alert("Email sent successfully!");
+}, (error) => {
+  alert("Failed to send email. Try again.");
+  console.error(error);
+});
+
+  </script>
+
+</body>
+</html>
