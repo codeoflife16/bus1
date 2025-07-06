@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Travel Agencies - BUS.COM</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f0f4f8;
+    }
+    h1 {
+      text-align: center;
+      color: #cc0000;
+      margin-bottom: 30px;
+    }
+    .agency-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .agency {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .agency img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 10px;
+    }
+    .agency h3 {
+      margin: 10px 0 5px;
+      color: #0077cc;
+    }
+    .agency p {
+      margin: 4px 0;
+    }
+    .testimonial {
+      font-style: italic;
+      font-size: 14px;
+      color: #444;
+      margin-top: 8px;
+    }
+    .filter {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    select {
+      padding: 10px;
+      font-size: 16px;
+    }
+    .book-btn {
+      margin-top: 12px;
+      padding: 10px 16px;
+      background-color: #cc0000;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .book-btn:hover {
+      background-color: #a30000;
+    }
+  </style>
+</head>
+<body>
+  <h1>🚍 Trusted Travel Agencies</h1>
+
+  <div class="filter">
+    <label for="sort">Sort by:</label>
+    <select id="sort" onchange="sortAgencies()">
+      <option value="default">Default</option>
+      <option value="price">Price (Low to High)</option>
+      <option value="rating">Rating (High to Low)</option>
+    </select>
+  </div>
+
+  <div class="agency-list" id="agencyList">
+    <!-- Agencies will be inserted here -->
+  </div>
+
+  <script>
+    const agencies = [
+      {
+        name: "Sunshine Travels",
+        price: 1500,
+        rating: 4.8,
+        contact: "9876543210",
+        img: "https://via.placeholder.com/100?text=Sun",
+        testimonial: "Excellent service and timely buses! Highly recommend."
+      },
+      {
+        name: "Royal Bus Services",
+        price: 1200,
+        rating: 4.5,
+        contact: "9988776655",
+        img: "https://via.placeholder.com/100?text=Royal",
+        testimonial: "Very clean buses and courteous drivers."
+      },
+      {
+        name: "Red Bengal Tours",
+        price: 1800,
+        rating: 4.9,
+        contact: "9123456780",
+        img: "https://via.placeholder.com/100?text=Red",
+        testimonial: "Best experience touring Kolkata with their AC coaches."
+      },
+      {
+        name: "Eco Drive Transport",
+        price: 1000,
+        rating: 4.3,
+        contact: "9345612873",
+        img: "https://via.placeholder.com/100?text=Eco",
+        testimonial: "Affordable and reliable for student and staff transport."
+      },
+      {
+        name: "Comfort Routes",
+        price: 1600,
+        rating: 4.7,
+        contact: "9867534210",
+        img: "https://via.placeholder.com/100?text=Comfort",
+        testimonial: "Their corporate shuttle service is top-notch."
+      }
+    ];
+
+    function displayAgencies(list) {
+      const container = document.getElementById('agencyList');
+      container.innerHTML = '';
+      list.forEach(agency => {
+        container.innerHTML += `
+          <div class="agency">
+            <img src="${agency.img}" alt="${agency.name}">
+            <h3>${agency.name}</h3>
+            <p><strong>Price:</strong> ₹${agency.price}</p>
+            <p><strong>Rating:</strong> ${agency.rating} ⭐</p>
+            <p><strong>Contact:</strong> ${agency.contact}</p>
+            <p class="testimonial">\"${agency.testimonial}\"</p>
+            <button class="book-btn" onclick="window.location.href='seatbook.html?agency=${encodeURIComponent(agency.name)}'">Book Now</button>
+          </div>
+        `;
+      });
+    }
+
+    function sortAgencies() {
+      const sortBy = document.getElementById('sort').value;
+      let sorted = [...agencies];
+      if (sortBy === 'price') {
+        sorted.sort((a, b) => a.price - b.price);
+      } else if (sortBy === 'rating') {
+        sorted.sort((a, b) => b.rating - a.rating);
+      }
+      displayAgencies(sorted);
+    }
+
+    window.onload = () => {
+      displayAgencies(agencies);
+    };
+  </script>
+</body>
+</html>
