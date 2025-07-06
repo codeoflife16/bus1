@@ -1,0 +1,232 @@
+<!-- trip-setup.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trip Setup - BUS.COM</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    #map {
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      z-index: 0;
+    }
+
+    #bgOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background: url('https://images.unsplash.com/photo-1606660988594-9faeecf8e4a2?auto=format&fit=crop&w=1400&q=80') no-repeat center center/cover;
+      opacity: 0.3;
+      z-index: 1;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      padding: 30px 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 400px;
+      z-index: 2;
+    }
+
+    h2 {
+      text-align: center;
+      color: #0077cc;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    select, input, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #0077cc;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #005fa3;
+    }
+
+    .toggle-mode {
+      font-size: 13px;
+      text-align: right;
+      color: #0077cc;
+      margin-top: -12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    .toggle-mode:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+      .overlay {
+        top: 5%;
+        padding: 25px 15px;
+      }
+
+      select, input, button {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="bgOverlay"></div>
+
+<div class="overlay">
+  <h2>Book Your Ride</h2>
+
+  <label for="pickup">Your Location</label>
+  <select id="pickupDropdown">
+    <option value="">-- Detecting Location --</option>
+  </select>
+  <div class="toggle-mode" onclick="toggleManual()">📝 Enter Location Manually</div>
+
+  <label for="destination">Destination</label>
+  <select id="destination">
+    <option value="">-- Select Destination --</option>
+  </select>
+
+  <button onclick="submitTrip()">Submit</button>
+</div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script>
+<script>
+  const kolkataStops = [
+    "Howrah Station", "Sealdah Station", "Esplanade", "Park Street", "College Street", "Shyambazar",
+    "Gariahat", "Dumdum", "Ultadanga", "Behala", "Salt Lake Sector V", "New Town", "Jadavpur",
+    "Tollygunge", "Kolkata Airport", "Baguiati", "Kestopur", "Lake Town", "BBD Bagh", "Kasba",
+    "Chingrighata", "Rabindra Sadan", "Sonarpur", "Naktala", "Barasat", "Baruipur", "Joka"
+  ];
+
+  let manualMode = false;
+  let map, geocoder;
+
+  function initMap() {
+    map = new google.maps.Map(document.getElementById("map"), {
+      center: { lat: 22.5726, lng: 88.3639 },
+      zoom: 13,
+      disableDefaultUI: true,
+    });
+
+    geocoder = new google.maps.Geocoder();
+
+    populateStops("destination");
+    populateStops("pickupDropdown");
+
+    detectCurrentLocation();
+  }
+
+  function populateStops(selectId) {
+    const dropdown = document.getElementById(selectId);
+    dropdown.innerHTML = `<option value="">-- Select ${selectId === 'destination' ? 'Destination' : 'Location'} --</option>`;
+    kolkataStops.forEach(stop => {
+      const option = document.createElement("option");
+      option.value = stop;
+      option.textContent = stop;
+      dropdown.appendChild(option);
+    });
+  }
+
+  function detectCurrentLocation() {
+    if (navigator.geolocation && !manualMode) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const latlng = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        };
+
+        map.setCenter(latlng);
+        new google.maps.Marker({ map, position: latlng });
+
+        geocoder.geocode({ location: latlng }, (results, status) => {
+          if (status === "OK" && results[0]) {
+            const address = results[0].formatted_address;
+            const dropdown = document.getElementById("pickupDropdown");
+            dropdown.innerHTML = `<option value="${address}" selected>${address}</option>`;
+          } else {
+            setManualDropdown("pickupDropdown");
+          }
+        });
+      }, () => {
+        setManualDropdown("pickupDropdown");
+      });
+    } else {
+      setManualDropdown("pickupDropdown");
+    }
+  }
+
+  function setManualDropdown(id) {
+    manualMode = true;
+    populateStops(id);
+    document.getElementById(id).disabled = false;
+    document.querySelector(".toggle-mode").innerText = "📍 Use My Location";
+  }
+
+  function toggleManual() {
+    manualMode = !manualMode;
+    if (manualMode) {
+      setManualDropdown("pickupDropdown");
+    } else {
+      detectCurrentLocation();
+      document.querySelector(".toggle-mode").innerText = "📝 Enter Location Manually";
+    }
+  }
+
+  function submitTrip() {
+    const pickup = document.getElementById("pickupDropdown").value;
+    const destination = document.getElementById("destination").value;
+
+    if (!pickup || !destination) {
+      alert("❗Please select both pickup and destination.");
+      return;
+    }
+
+    if (pickup === destination) {
+      alert("❌ Pickup and destination cannot be the same.");
+      return;
+    }
+
+    // Redirect to available-buses.html
+    const url = `available.html?pickup=${encodeURIComponent(pickup)}&destination=${encodeURIComponent(destination)}`;
+    window.location.href = url;
+  }
+
+  window.onload = initMap;
+</script>
+</body>
+</html>
